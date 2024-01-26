@@ -1,0 +1,2 @@
+requests==2.26.0
+http://localhost:8000/chatbot/chat/

@@ -1,0 +1,82 @@
+<!-- chatbot/templates/chatbot/chat.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% csrf_token "my_csrf_token" %}
+    <meta charset="UTF-8">
+    <title>Chatbot Song Recommendation</title>
+    <!-- Add your CSS links or styles here -->
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-history">
+            {% for interaction in interactions %}
+                <p class="user-message">{{ interaction.user }}: {{ interaction.message }}</p>
+            {% endfor %}
+            {% for recommendation in recommendations %}
+                <p class="bot-message">Bot: {{ recommendation.message }}</p>
+                <p class="sentiment">Sentiment: {{ recommendation.sentiment }}</p>
+            {% endfor %}
+        </div>
+        <div id="user-input-container">
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            // Check if this cookie string begins with the name we want
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function sendMessage() {
+    var userMessage = document.getElementById('user-input').value;
+
+    // Add the user's message to the chat history
+    var chatHistory = document.getElementById('chat-history');
+    var userMessageElement = document.createElement('p');
+    userMessageElement.textContent = 'You: ' + userMessage;
+    chatHistory.appendChild(userMessageElement);
+
+    // Clear the input field
+    document.getElementById('user-input').value = '';
+
+    // Send the user's message to the Django backend
+    fetch('http://localhost:8000/chatbot/chat/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),  // Get CSRF token from cookies
+        },
+        body: JSON.stringify({ message: userMessage }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update chat history with the bot's response and sentiment
+        var botMessageElement = document.createElement('p');
+        botMessageElement.textContent = 'Bot: ' + data.message;
+        chatHistory.appendChild(botMessageElement);
+        var sentimentElement = document.createElement('p');
+        sentimentElement.textContent = 'Sentiment: ' + data.sentiment;
+        chatHistory.appendChild(sentimentElement);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+    </script>
+</body>
+</html>
